@@ -3,5 +3,6 @@ command = """
 python -m playwright install --with-deps chromium && \
 crawl4ai-setup && \
 crawl4ai-doctor
+playwright install
 playwright install-deps
 """
