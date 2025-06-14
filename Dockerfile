@@ -35,6 +35,7 @@ RUN pip install -r requirements.txt
 # Cài Playwright và trình duyệt
 RUN python -m playwright install --with-deps chromium
 RUN crawl4ai-setup && crawl4ai-doctor || true
+RUN playwright install
 
 # Command mặc định (nếu muốn chạy như service)
 CMD ["sleep", "infinity"]
