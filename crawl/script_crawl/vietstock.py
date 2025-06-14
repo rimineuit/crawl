@@ -7,15 +7,21 @@ from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 import re
 
 
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+import logging
+import re
+
 def check_date_time(date_time_str: str) -> bool:
     """
-    Kiểm tra xem thời gian trong chuỗi có nằm trong ngày hiện tại không.
+    Kiểm tra xem thời gian trong chuỗi có nằm trong ngày hiện tại không (giờ Việt Nam).
     Hỗ trợ các định dạng:
     - 'x giờ trước'
     - 'x phút trước'
     - 'dd/mm HH:MM'
     """
-    now = datetime.now()
+    vn_tz = ZoneInfo("Asia/Ho_Chi_Minh")
+    now = datetime.now(vn_tz)
 
     try:
         date_time_str = date_time_str.strip().lower()
@@ -40,6 +46,7 @@ def check_date_time(date_time_str: str) -> bool:
         else:
             try:
                 article_time = datetime.strptime(date_time_str, "%d/%m %H:%M")
+                article_time = article_time.replace(year=now.year, tzinfo=vn_tz)
                 return article_time.date() == now.date()
             except ValueError:
                 logging.warning(f"⚠️ Unrecognized time format: '{date_time_str}'")

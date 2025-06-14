@@ -6,8 +6,11 @@ from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
 
+from zoneinfo import ZoneInfo
+
 def get_time_now():
-    return datetime.now()
+    return datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+
 
 def check_date_time(date_time_str):
     now = get_time_now()

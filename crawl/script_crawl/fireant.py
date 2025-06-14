@@ -172,7 +172,7 @@ async def visit_link_fireant(link):
         print(f"✅ Crawl done in {round(end - start, 2)}s")
 
         articles = []
-
+    
         vn_tz = ZoneInfo("Asia/Ho_Chi_Minh")
         now = datetime.now(vn_tz)
         today = now.date()
