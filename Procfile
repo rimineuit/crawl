@@ -1,1 +1,1 @@
-worker: playwright install && python run_schedule.py
+worker: python run_schedule.py

@@ -1,0 +1,6 @@
+[build]
+command = """
+python -m playwright install --with-deps chromium && \
+crawl4ai-setup && \
+crawl4ai-doctor
+"""
