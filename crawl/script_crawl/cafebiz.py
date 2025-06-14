@@ -157,7 +157,7 @@ async def visit_link_cafebiz(link):
 
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=False,
+        headless=True,
         extra_args=["--disable-extensions"],
     )
 

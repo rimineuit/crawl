@@ -78,7 +78,7 @@ async def visit_link_cafef(link):
 
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=False,
+        headless=True,
         extra_args=["--disable-extensions"],
     )
     first_script = """js:() => {

@@ -107,7 +107,7 @@ async def visit_link_fireant(link):
 
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=False,
+        headless=True,
         extra_args=["--disable-extensions"],
     )
 
