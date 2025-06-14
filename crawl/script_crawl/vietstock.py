@@ -111,7 +111,7 @@ async def visit_link_vietstock(link):
                 js_code=next_page_script
             )
         )
-            data.extend(json.loads(raw_data))
+            data.extend(json.loads(result))
     articles = []
     for item in data:
         try:
@@ -122,7 +122,7 @@ async def visit_link_vietstock(link):
 
             articles.append({
                 "title": item.get("title", "").strip(),
-                "href": f"https://fireant.vn{item.get('href', '')}",
+                "href": f"https://vietstock.vn{item.get('href', '')}",
                 "description": item.get("description", "").strip(),
             })
         except Exception as e:

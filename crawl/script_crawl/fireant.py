@@ -37,6 +37,7 @@ def parse_article_time(date_time_str):
 
     return None
 
+
 async def visit_link_fireant(link):
     # JavaScript to check for "Để sau" button.
     check_button_script = """js:() => {
@@ -172,11 +173,19 @@ async def visit_link_fireant(link):
 
         articles = []
 
+        vn_tz = ZoneInfo("Asia/Ho_Chi_Minh")
+        now = datetime.now(vn_tz)
+        today = now.date()
+
         for item in data:
             try:
                 time_str = item.get("time_publish", "")
                 parsed_time = parse_article_time(time_str)
                 if not parsed_time:
+                    continue
+
+                # ✅ Bỏ qua nếu không phải bài hôm nay
+                if parsed_time.date() != today:
                     continue
 
                 articles.append({
@@ -188,6 +197,7 @@ async def visit_link_fireant(link):
             except Exception as e:
                 print(f"[⚠️] Error parsing item: {e}")
                 continue
+
 
         return articles
 
