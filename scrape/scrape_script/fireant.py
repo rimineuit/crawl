@@ -56,7 +56,7 @@ async def scrape_fireant_article(link):
 
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=False,
+        headless=True,
         extra_args=["--disable-extensions"],
         viewport_width=1320,
         viewport_height=720,
