@@ -9,7 +9,6 @@ import asyncpg
 import asyncio
 from zoneinfo import ZoneInfo
 from datetime import datetime
-from crawl_and_scraper.scrape_articles.fireant_scrape_crawl4ai import scrape_fireant_article
 
 def get_key_words(key_words_path='./crawl_and_scraper/key_words.txt'):
     """Load keywords from a file."""
@@ -94,30 +93,3 @@ async def filter_links_by_keywords(db_url, key_words_path='./crawl_and_scraper/k
     finally:
         await pool.close()
         
-# from dotenv import load_dotenv 
-# load_dotenv()
-
-# if __name__ == "__main__":
-
-#     async def main():
-
-#         DATABASE_URL = os.getenv('DATABASE_URL')
-
-#         # Chạy hàm lọc links
-        
-#         matched_links = await filter_links_by_keywords(DATABASE_URL)
-#         # Crawl lại từng link trong matched_links
-#         articles = []
-#         for link in matched_links:
-#             url = link['href']
-#             logging.info(f"Re-scraping article: {url}")
-#             article = await scrape_fireant_article(url)
-#             if article:
-#                 articles.append(article)
-#             else:
-#                 logging.error(f"Failed to re-scrape article: {url}")
-#         return articles
-        
-#     articles = asyncio.run(main())
-#     for a in articles:
-#         print(a)

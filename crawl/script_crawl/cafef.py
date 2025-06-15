@@ -87,7 +87,6 @@ async def visit_link_cafef(link):
         return document.querySelector('div.tlitem.box-category-item') !== null;
     }"""
 
-    
     async with AsyncWebCrawler(config=browser_config) as crawler:
         await crawler.arun(
             url=link,
