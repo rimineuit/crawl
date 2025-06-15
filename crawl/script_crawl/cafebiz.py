@@ -12,8 +12,7 @@ from zoneinfo import ZoneInfo  # Python 3.9+
 
 def check_time(time_str):
     if not time_str or time_str.strip() == "":
-        return True
-
+        return False
     try:
         article_time = datetime.strptime(time_str, "%H:%M %d/%m/%Y")
 

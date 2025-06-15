@@ -3,14 +3,12 @@ import sys
 # Thêm thư mục gốc của project vào sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import logging
 import asyncpg
 import asyncio
 from zoneinfo import ZoneInfo
 from datetime import datetime
 import json
 # PyVi để tokenize và loại bỏ stop-words
-from pyvi import ViTokenizer, ViPosTagger
 from scrape_articles_from_reranker import scrape_from_urls
 # Jina AI reranker client
 from jina import Client as JinaClient, Document
@@ -19,20 +17,26 @@ from jina import Client as JinaClient, Document
 # from gemini_sdk import Gemini
 
 #----------------------------------------
-def load_vietnamese_stopwords(path='vietnamese_stopwords.txt'):
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return set(line.strip() for line in f if line.strip())
-    except FileNotFoundError:
-        return set()
 
-def preprocess_query(query: str, stopwords_path='vietnamese_stopwords.txt') -> list[str]:
-    stopwords = load_vietnamese_stopwords(stopwords_path)
-    tokenized = ViTokenizer.tokenize(query)
-    keywords = [word.replace('_', ' ')
-                for word in tokenized.split()
-                if word.replace('_', ' ') not in stopwords]
-    return keywords
+async def embedding_query_with_jina(query: str, api_key: str) -> list[float]:
+    url = 'https://api.jina.ai/v1/embeddings'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+    data = {
+        "model": "jina-embeddings-v3",
+        "task": "retrieval.query",
+        "dimensions": 64,
+        "input": [query]
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+
+    embedding = response.json()["data"][0]["embedding"]
+    return embedding
+
 
 async def fetch_links_from_db(pool):
     """Fetch all links from the database."""
@@ -53,16 +57,27 @@ async def fetch_links_from_db(pool):
             for row in rows
         ]
 
-def filter_by_keywords(links: list[dict], keywords: list[str]) -> list[dict]:
-    """Lọc các link chứa bất kỳ từ khóa nào trong title/description."""
-    result, seen = [], set()
-    for link in links:
-        text = (link['title'] + ' ' + link['description']).lower().replace('\n', '').strip()
-        if any(kw.lower() in text for kw in keywords):
-            if link['id'] not in seen:
-                result.append(link)
-                seen.add(link['id'])
-    return result
+async def fetch_top_links_by_embedding(pool, embedding: list[float], top_k: int = 10):
+    async with pool.acquire() as conn:
+        query = """
+            SELECT link_id, url, title, description, published_at, source
+            FROM links
+            WHERE embedding IS NOT NULL
+            ORDER BY embedding <#> $1
+            LIMIT $2
+        """
+        rows = await conn.fetch(query, embedding, top_k)
+        return [
+            {
+                'id': row['link_id'],
+                'href': row['url'],
+                'title': row['title'] or '',
+                'description': row['description'] or '',
+                'source': row['source']
+            }
+            for row in rows
+        ]
+
 
 import requests
 
@@ -81,7 +96,7 @@ async def rerank_with_jina(links: list[dict], query: str, jina_api_key: str):
     data = {
         "model": "jina-reranker-v2-base-multilingual",
         "query": query,
-        "top_n": str(len(documents)),  # rerank tất cả
+        "top_n": "5",
         "documents": documents,
         "return_documents": False
     }
@@ -95,38 +110,36 @@ async def rerank_with_jina(links: list[dict], query: str, jina_api_key: str):
     # Trả về danh sách link['id'] theo thứ tự reranked
     return [links[i]['id'] for i in indices]
 
+def list_to_pgvector(v):
+    return f'[{", ".join(f"{x:.8f}" for x in v)}]'
 
 async def process_user_query(db_url: str,
                              query: str,
-                             jina_endpoint: str):
-    """Toàn bộ flow từ query → preproc → fetch → filter → rerank"""
-    if not all([db_url, query, jina_endpoint]):
+                             jina_api_key: str):
+    if not all([db_url, query, jina_api_key]):
         raise ValueError("Thiếu config (DATABASE_URL / JINA_ENDPOINT.")
 
-    # 1. Preprocess
-    keywords = preprocess_query(query)
-    if not keywords:
-        logging.warning("Query sau preproc không còn từ khóa.")
-        return []
-    # 2. Lấy tất cả links
     pool = await asyncpg.create_pool(db_url)
     try:
-        links = await fetch_links_from_db(pool)
-        if not links:
+        # 1. Embedding query
+        query_vector = list_to_pgvector(await embedding_query_with_jina(query, jina_api_key))
+
+        # 2. Lấy top links theo vector similarity
+        top_links = await fetch_top_links_by_embedding(pool, query_vector, top_k=20)
+
+        if not top_links:
             return []
 
-        # 3. Filter theo từ khóa
-        filtered = filter_by_keywords(links, keywords)
-        if not filtered:
-            return []
-        # 4. Rerank với Jina
-        ranked = await rerank_with_jina(filtered, query, jina_endpoint)
-        # 5. Chọn top 5 
-        top_ids = ranked[:5]
-        top_links = [link for link in filtered if link['id'] in top_ids]
-        return top_links
+        # 3. Rerank lại với Jina
+        reranked_ids = await rerank_with_jina(top_links, query, jina_api_key)
+
+        # 4. Trả về top 5 kết quả sau rerank
+        top_ids = reranked_ids[:5]
+        return [link for link in top_links if link['id'] in top_ids]
+
     finally:
         await pool.close()
+
 #----------------------------------------
 import asyncio
 import google.generativeai as genai
@@ -158,7 +171,7 @@ async def main():
     dotenv.load_dotenv()
 
     db_url = os.getenv("DATABASE_URL")
-    jina_ep = os.getenv("JINA_ENDPOINT")
+    jina_ep = os.getenv("JINA_API_KEY")
     user_query = input("Nhập câu truy vấn của bạn: ")
 
     # Gọi xử lý truy vấn

@@ -101,7 +101,7 @@ async def visit_link_fireant(link):
         "fields": [
             {"name": "title", "selector": "div div.flex div.flex-1 div.mb-2 a", "type": "text"},
             {"name": "href", "selector": "div div.flex div.flex-1 div.mb-2 a", "type": "attribute","attribute": "href"},
-            {"name": "description", "selector": "div.hidden div.mb-2.max-sm.line-clamp-2", "type": "text"},
+            {"name": "description", "selector": "div div.flex div.flex-1 div.hidden.md\\:block div.mb-2.line-clamp-2", "type": "text"},
             {"name": "time_publish", "selector": "div div.flex.flex-1 div.flex-1 div.flex.flex-row div.flex-1 span.text-gray-400","type": "text"},
         ]
     }
@@ -162,15 +162,15 @@ async def visit_link_fireant(link):
                 )
                 await asyncio.sleep(0.5)
                 articles = json.loads(contents.extracted_content)
-                if await check_article_existed_in_db(f"https://fireant.vn{articles[-1].get('href','')}"):
-                    break
                 data.extend(articles)
                 # Check if the last article is not in today
                 if parse_article_time(articles[-1].get("time_publish","")) == None:
                     print(parse_article_time(articles[-1].get("time_publish","")))
                     print("Last article is not in today!")
                     break
-            
+                
+                if await check_article_existed_in_db(f"https://fireant.vn{articles[-1].get('href','')}"):
+                    break
             
         end = time.time()
         print(f"✅ Crawl done in {round(end - start, 2)}s")

@@ -62,6 +62,7 @@ async def fetch_links_from_db(pool):
             logging.error(f"Error fetching links from database: {e}")
             return []
 
+
 async def filter_links_by_keywords(db_url, key_words_path='./crawl_and_scraper/key_words.txt'):
     """Fetch links from database and filter by keywords."""
     if not db_url:

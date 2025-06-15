@@ -13,25 +13,40 @@ import logging
 import re
 
 
-def get_time():
-    """Return the current hour and minute as a tuple."""
-    now = datetime.now()
-    return now.hour, now.minute
+import re
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
-from datetime import datetime, timedelta, timezone
+def parse_article_time(date_time_str: str):
+    """
+    Parse relative time strings (e.g., '2 hours ago', '30 minutes ago', etc.)
+    and return a datetime object in UTC+7 timezone.
+    If the string doesn't match, return None.
+    """
 
-def parse_article_time(date_time_str):
-    """Parse time string and return UTC datetime if it's from today, else None."""
-    now = datetime.now()
-    if "HOURS" in date_time_str:
-        match = re.search(r'(\d+)', date_time_str)
-        hours_ago = int(match.group(1)) if match else 0
-        local_time = now - timedelta(hours=hours_ago)
-        return local_time.astimezone(timezone.utc)
-    # Các dạng như "Hôm qua", "2 ngày trước" sẽ bị bỏ qua
+    date_time_str = date_time_str.strip().lower()
+    now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+
+    # Regex pattern: e.g. "2 hours ago", "30 mins ago", "an hour ago"
+    hour_match = re.search(r"(\d+|an)\s*hour", date_time_str)
+    minute_match = re.search(r"(\d+|a)\s*min", date_time_str)
+
+    if hour_match:
+        val = hour_match.group(1)
+        hours = 1 if val in ["an"] else int(val)
+        local_time = now - timedelta(hours=hours)
+        return local_time
+
+    elif minute_match:
+        val = minute_match.group(1)
+        minutes = 1 if val in ["a"] else int(val)
+        local_time = now - timedelta(minutes=minutes)
+        return local_time
+
     return None
 
-async def visit_link_vietstock(link):
+
+async def visit_link_cnbc(link):
     browser_config = BrowserConfig(
         browser_type="chromium",
         headless=True,
@@ -71,7 +86,13 @@ async def visit_link_vietstock(link):
             )
         )
         
-        articles = json.loads(result.extracted_content)
+        data = json.loads(result.extracted_content)
+        articles = []
+        
+        for article in data:
+            
+        
+        
         
         
         
