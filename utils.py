@@ -40,3 +40,19 @@ async def save_articles_to_db(pool, articles):
                 print(f"✅ Inserted: {article['title']}")
             except Exception as e:
                 print(f"❌ Error inserting article {article.get('href')}: {e}")
+                
+                
+import os
+import asyncpg
+from dotenv import load_dotenv
+
+        
+async def check_article_existed_in_db(url):
+    load_dotenv()
+    DATABASE_URL = os.getenv('DATABASE_URL')
+
+    pool = await asyncpg.create_pool(DATABASE_URL)
+    async with pool.acquire() as conn:
+        query = "SELECT EXISTS(SELECT 1 FROM links WHERE url = $1)"
+        result = await conn.fetchval(query, url)
+        return result

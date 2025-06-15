@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 import re
-
+from utils import check_article_existed_in_db
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -56,9 +56,6 @@ def check_date_time(date_time_str: str) -> bool:
         logging.warning(f"⚠️ Error parsing time string '{date_time_str}': {e}")
         return False
 
-    
-    
-    
 async def visit_link_vietstock(link):
     browser_config = BrowserConfig(
         browser_type="chromium",
@@ -106,19 +103,22 @@ async def visit_link_vietstock(link):
         )
         raw_data = json.loads(result.extracted_content)
         data.extend(raw_data)
-        while check_date_time(data[-1].get("time","")):
-            result = await crawler.arun(
-            url=link,
-            config=CrawlerRunConfig(
-                session_id="vietstock_session",
-                cache_mode=CacheMode.BYPASS,
-                js_only=True,
-                extraction_strategy=JsonCssExtractionStrategy(schema),
-                wait_for=at_least_on_article,
-                js_code=next_page_script
+        if not check_article_existed_in_db(raw_data[-1].get("url","")):
+            while check_date_time(data[-1].get("time","")):
+                result = await crawler.arun(
+                url=link,
+                config=CrawlerRunConfig(
+                    session_id="vietstock_session",
+                    cache_mode=CacheMode.BYPASS,
+                    js_only=True,
+                    extraction_strategy=JsonCssExtractionStrategy(schema),
+                    wait_for=at_least_on_article,
+                    js_code=next_page_script
+                )
             )
-        )
-            data.extend(json.loads(result))
+                if check_article_existed_in_db(raw_data[-1].get("url","")):
+                    break
+                data.extend(json.loads(result))
     articles = []
     for item in data:
         try:
@@ -132,6 +132,7 @@ async def visit_link_vietstock(link):
                 "href": f"https://vietstock.vn{item.get('href', '')}",
                 "description": item.get("description", "").strip(),
             })
+            
         except Exception as e:
             print(f"[⚠️] Error parsing item: {e}")
             continue

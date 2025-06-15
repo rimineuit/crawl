@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 from zoneinfo import ZoneInfo
-
+from utils import check_article_existed_in_db
 def parse_article_time(date_time_str):
     vn_tz = ZoneInfo("Asia/Ho_Chi_Minh")
     now = datetime.now(vn_tz)  # ✅ Thời gian hiện tại theo múi giờ Việt Nam
@@ -139,40 +139,43 @@ async def visit_link_fireant(link):
         )
         
         data = []
-        data.extend(json.loads(first_article.extracted_content))
-        # Vòng lặp while để lấy tất cả những bài viết trong ngày
-        while True:
-            js_code="""
-            new Promise(resolve => {
-                window.scrollBy(0, window.innerHeight);
-            });
-            """
-            contents = await crawler.arun(
-                url=link,
-                config=CrawlerRunConfig(
-                    js_code=js_code,
-                    # wait_for="js:() => document.querySelectorAll('div[data-index]').length >= 5",
-                    session_id='rimine',
-                    extraction_strategy=JsonCssExtractionStrategy(schema),
-                    js_only=True,
-                    cache_mode=CacheMode.BYPASS
+        articles = json.loads(first_article.extracted_content)
+        data.extend(articles)
+        if not check_article_existed_in_db(articles[-1].get("url","")):
+            # Vòng lặp while để lấy tất cả những bài viết trong ngày
+            while True:
+                js_code="""
+                new Promise(resolve => {
+                    window.scrollBy(0, window.innerHeight);
+                });
+                """
+                contents = await crawler.arun(
+                    url=link,
+                    config=CrawlerRunConfig(
+                        js_code=js_code,
+                        session_id='rimine',
+                        extraction_strategy=JsonCssExtractionStrategy(schema),
+                        js_only=True,
+                        cache_mode=CacheMode.BYPASS
+                    )
                 )
-            )
-            await asyncio.sleep(0.5)
-            articles = json.loads(contents.extracted_content)
-            data.extend(articles)
-            # Check if the last article is not in today
-            if parse_article_time(articles[-1].get("time_publish","")) == None:
-                print(parse_article_time(articles[-1].get("time_publish","")))
-                print("Last article is not in today!")
-                break
+                await asyncio.sleep(0.5)
+                articles = json.loads(contents.extracted_content)
+                if check_article_existed_in_db(articles[-1].get("url","")):
+                    break
+                data.extend(articles)
+                # Check if the last article is not in today
+                if parse_article_time(articles[-1].get("time_publish","")) == None:
+                    print(parse_article_time(articles[-1].get("time_publish","")))
+                    print("Last article is not in today!")
+                    break
             
             
         end = time.time()
         print(f"✅ Crawl done in {round(end - start, 2)}s")
 
         articles = []
-    
+
         vn_tz = ZoneInfo("Asia/Ho_Chi_Minh")
         now = datetime.now(vn_tz)
         today = now.date()

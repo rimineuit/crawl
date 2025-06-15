@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
-
+from utils import check_article_existed_in_db
 from zoneinfo import ZoneInfo
 
 def get_time_now():
@@ -63,7 +63,6 @@ async def visit_link_cafef(link):
             }
             resolve();
         }
-
         await autoClick();
     });
     """
