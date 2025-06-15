@@ -103,7 +103,7 @@ async def visit_link_vietstock(link):
         )
         raw_data = json.loads(result.extracted_content)
         data.extend(raw_data)
-        if not check_article_existed_in_db(raw_data[-1].get("url","")):
+        if not await check_article_existed_in_db(raw_data[-1].get("url","")):
             while check_date_time(data[-1].get("time","")):
                 result = await crawler.arun(
                 url=link,
@@ -116,7 +116,7 @@ async def visit_link_vietstock(link):
                     js_code=next_page_script
                 )
             )
-                if check_article_existed_in_db(raw_data[-1].get("url","")):
+                if await check_article_existed_in_db(raw_data[-1].get("url","")):
                     break
                 data.extend(json.loads(result))
     articles = []

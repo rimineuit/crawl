@@ -141,7 +141,7 @@ async def visit_link_fireant(link):
         data = []
         articles = json.loads(first_article.extracted_content)
         data.extend(articles)
-        if not check_article_existed_in_db(articles[-1].get("url","")):
+        if not await check_article_existed_in_db(articles[-1].get("url","")):
             # Vòng lặp while để lấy tất cả những bài viết trong ngày
             while True:
                 js_code="""
@@ -161,7 +161,7 @@ async def visit_link_fireant(link):
                 )
                 await asyncio.sleep(0.5)
                 articles = json.loads(contents.extracted_content)
-                if check_article_existed_in_db(articles[-1].get("url","")):
+                if await check_article_existed_in_db(articles[-1].get("url","")):
                     break
                 data.extend(articles)
                 # Check if the last article is not in today
