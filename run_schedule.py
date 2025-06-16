@@ -4,7 +4,7 @@ scripts = [
     "crawl/run_crawl/vietstock.py",
     "crawl/run_crawl/cafef.py",
     "crawl/run_crawl/cafebiz.py",
-    "crawl/run_crawl/fireant.py"
+    "crawl/run_crawl/fireant.py",
     "embedding_vector.py"
 ]
 
