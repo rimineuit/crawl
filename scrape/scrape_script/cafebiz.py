@@ -5,6 +5,24 @@ from datetime import datetime
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 import pytz
+import logging
+
+import contextlib
+import os
+import sys
+
+@contextlib.contextmanager
+def suppress_output():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
 def convert_vn_time_to_local(vn_time_str):
     """
@@ -38,7 +56,7 @@ async def scrape_cafebiz_article(url):
         headless=True,
         viewport_width=1280,
         viewport_height=720,
-        extra_args=["--disable-extensions"]
+        extra_args=["--disable-extensions"],
     )
 
     async with AsyncWebCrawler(config=browser_config) as crawler:
@@ -70,7 +88,7 @@ async def scrape_cafebiz_article(url):
                 article = json.loads(result.extracted_content)[0]
                 if "time" in article:
                     parsed_time = convert_vn_time_to_local(article["time"])
-                    article["time"] = parsed_time if parsed_time else None
+                    article["time"] = parsed_time.isoformat() if parsed_time else None
 
                 article["href"] = url
                 article["source"] = "Cafebiz"
@@ -80,3 +98,11 @@ async def scrape_cafebiz_article(url):
             print("❌ Không trích xuất được nội dung từ Cafebiz")
 
         return article
+import sys
+import asyncio
+
+if __name__ == "__main__":
+    import sys
+    url = sys.argv[1]
+    result = asyncio.run(scrape_cafebiz_article(url))
+    print(json.dumps(result, ensure_ascii=False))

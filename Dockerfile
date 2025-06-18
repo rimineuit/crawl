@@ -34,8 +34,10 @@ RUN pip install -r requirements.txt
 
 # Cài Playwright và trình duyệt
 RUN python -m playwright install --with-deps chromium
-RUN crawl4ai-setup && crawl4ai-doctor || true
-RUN playwright install
+RUN crawl4ai-setup
+RUN crawl4ai-doctor 
+# Cổng mặc định Railway sẽ gán qua biến môi trường `PORT`
+ENV PORT=8000
 
-# Command mặc định (nếu muốn chạy như service)
-CMD ["sleep", "infinity"]
+# Lệnh chạy FastAPI bằng uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

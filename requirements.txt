@@ -27,3 +27,5 @@ glob2  # nếu anh dùng glob nâng cao
 # Optional (nếu dùng các tính năng nâng cao của crawl4ai)
 lxml
 nest_asyncio
+uvicorn
+fastapi
