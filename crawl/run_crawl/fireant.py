@@ -1,7 +1,5 @@
 import sys
 import os
-import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 # Thêm thư mục gốc project vào sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
@@ -18,7 +16,7 @@ async def main():
     for url in urls:
         articles = await visit_link_fireant(url)
         print(f"Crawled {len(articles)} articles from {url}")
-        await write_links_to_db(articles, DATABASE_URL, source="Fireant")
+        # await write_links_to_db(articles, DATABASE_URL, source="Fireant")
 
 if __name__ == "__main__":
     asyncio.run(main())
