@@ -195,7 +195,7 @@ async def visit_link_fireant(link):
                     "title": item.get("title", "").strip(),
                     "href": f"https://fireant.vn{item.get('href', '')}",
                     "description": item.get("description", "").strip(),
-                    "time": time_str
+                    "published_at": parsed_time
                 })
             except Exception as e:
                 print(f"[⚠️] Error parsing item: {e}")

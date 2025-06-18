@@ -19,6 +19,6 @@ async def main():
         articles = await visit_link_cafebiz(url)  # truyền context hoặc browser tùy bạn thiết kế
         print(f"Crawled {len(articles)} articles from {url}")
         await write_links_to_db(articles, DATABASE_URL, source="CafeBiz")
-    
+
 if __name__ == "__main__":
     asyncio.run(main())

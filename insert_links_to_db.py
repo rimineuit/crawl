@@ -61,7 +61,7 @@ async def save_links_to_db(pool, links, source):
         return
 
     insert_query = """
-        INSERT INTO links (url, title, description, source)
+        INSERT INTO articles (url, title, published_at, source)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (url) DO NOTHING;
     """
@@ -69,14 +69,11 @@ async def save_links_to_db(pool, links, source):
     async with pool.acquire() as conn:
         for link in links:
             try:
-                # time = link.get("time")
-                # if isinstance(time, str):
-                #     parsed_time = parse_article_time_fireant(time)
                 await conn.execute(
                     insert_query,
                     link.get("href"),
                     link.get("title"),
-                    link.get("description"),
+                    link.get("published_at"),
                     source
                 )
                 print(f"✅ Inserted: {link['title']}")

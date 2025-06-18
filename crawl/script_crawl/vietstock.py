@@ -12,10 +12,15 @@ from zoneinfo import ZoneInfo
 import logging
 import re
 
-def check_date_time(date_time_str: str) -> bool:
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+import re
+import logging
+
+def check_date_time(date_time_str: str) -> datetime | None:
     """
-    Kiểm tra xem thời gian trong chuỗi có nằm trong ngày hiện tại không (giờ Việt Nam).
-    Hỗ trợ các định dạng:
+    Parse chuỗi thời gian và trả về đối tượng datetime có timezone Asia/Ho_Chi_Minh nếu hợp lệ trong ngày hôm nay.
+    Hỗ trợ:
     - 'x giờ trước'
     - 'x phút trước'
     - 'dd/mm HH:MM'
@@ -32,7 +37,8 @@ def check_date_time(date_time_str: str) -> bool:
             if match:
                 hours_ago = int(match.group(1))
                 article_time = now - timedelta(hours=hours_ago)
-                return article_time.date() == now.date()
+                if article_time.date() == now.date():
+                    return article_time
 
         # Trường hợp: "x phút trước"
         elif "phút" in date_time_str:
@@ -40,21 +46,24 @@ def check_date_time(date_time_str: str) -> bool:
             if match:
                 minutes_ago = int(match.group(1))
                 article_time = now - timedelta(minutes=minutes_ago)
-                return article_time.date() == now.date()
+                if article_time.date() == now.date():
+                    return article_time
 
         # Trường hợp: "dd/mm HH:MM"
         else:
             try:
                 article_time = datetime.strptime(date_time_str, "%d/%m %H:%M")
                 article_time = article_time.replace(year=now.year, tzinfo=vn_tz)
-                return article_time.date() == now.date()
+                if article_time.date() == now.date():
+                    return article_time
             except ValueError:
                 logging.warning(f"⚠️ Unrecognized time format: '{date_time_str}'")
-                return False
+                return None
 
     except Exception as e:
         logging.warning(f"⚠️ Error parsing time string '{date_time_str}': {e}")
-        return False
+        return None
+
 
 async def visit_link_vietstock(link):
     browser_config = BrowserConfig(
@@ -131,6 +140,7 @@ async def visit_link_vietstock(link):
                 "title": item.get("title", "").strip(),
                 "href": f"https://vietstock.vn{item.get('href', '')}",
                 "description": item.get("description", "").strip(),
+                "published_at": parsed_time
             })
             
         except Exception as e:

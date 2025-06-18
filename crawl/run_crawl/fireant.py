@@ -17,7 +17,7 @@ async def main():
         articles = await visit_link_fireant(url)
         print(f"Crawled {len(articles)} articles from {url}")
         await write_links_to_db(articles, DATABASE_URL, source="Fireant")
-
+        
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
