@@ -40,4 +40,4 @@ RUN crawl4ai-doctor
 ENV PORT=8000
 
 # Lệnh chạy FastAPI bằng uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "test_fast_api:app", "--host", "0.0.0.0", "--port", "8000"]
