@@ -52,6 +52,7 @@ def crawl_links():
                 encoding='utf-8'
             )
             print(">>> STDOUT:", result.stdout)
+            
     except subprocess.CalledProcessError as e:
         return {"error": "Script lỗi", "details": e.stderr}
         

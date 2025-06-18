@@ -142,7 +142,7 @@ async def visit_link_fireant(link):
         articles = json.loads(first_article.extracted_content)
         data.extend(articles)
 
-        if not await check_article_existed_in_db(f"https://fireant.vn{articles[-1].get('href','')}"):
+        if not await check_article_existed_in_db(f"https://fireant.vn{data[-1].get('href','')}"):
             # Vòng lặp while để lấy tất cả những bài viết trong ngày
             while True:
                 js_code="""
@@ -169,7 +169,7 @@ async def visit_link_fireant(link):
                     print("Last article is not in today!")
                     break
                 
-                if await check_article_existed_in_db(f"https://fireant.vn{articles[-1].get('href','')}"):
+                if await check_article_existed_in_db(f"https://fireant.vn{data[-1].get('href','')}"):
                     break
             
         end = time.time()
