@@ -20,6 +20,8 @@ async def main():
         articles = await visit_link_vietstock(url)  # truyền context hoặc browser tùy bạn thiết kế
         print(f"Crawled {len(articles)} articles from {url}")
         await write_links_to_db(articles, DATABASE_URL, source="VietStock")
-    
+import json
 if __name__ == "__main__":
-    asyncio.run(main())
+
+    result = asyncio.run(main())
+    print(json.dumps(result, ensure_ascii=False))

@@ -43,7 +43,7 @@ def crawl_links():
         paths = ["crawl/run_crawl/fireant.py","crawl/run_crawl/vietstock.py"]
         for path in paths:
             script_path = os.path.abspath(path)
-            subprocess.run(
+            result = subprocess.run(
                 [sys.executable, script_path],
                 capture_output=True,
                 text=True,
@@ -51,6 +51,7 @@ def crawl_links():
                 env=env,
                 encoding='utf-8'
             )
+            print(">>> STDOUT:", result.stdout)
     except subprocess.CalledProcessError as e:
         return {"error": "Script lỗi", "details": e.stderr}
         
