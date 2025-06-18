@@ -12,6 +12,7 @@ env["PYTHONUTF8"] = "1"
 class URLInput(BaseModel):
     url: str
     source: str
+    id: int
 
 import sys
 @app.get("/check")
@@ -47,7 +48,7 @@ def scrape_articles(input_data: URLInput):
     try:
         script_path = os.path.abspath("scrape_articles_by_source.py")
         result = subprocess.run(
-            [sys.executable, script_path, input_data.url, input_data.source],
+            [sys.executable, script_path, input_data.url, input_data.source, input_data.id],
             capture_output=True,
             text=True,
             check=True,

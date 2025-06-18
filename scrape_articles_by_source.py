@@ -16,13 +16,14 @@ SCRAPE_FUNC_MAP = {
 
 
 async def main():
-    if len(sys.argv) < 3:
-        print("⚠️ Dùng: python script.py <url> <source>")
+    if len(sys.argv) < 4:
+        print("⚠️ Dùng: python script.py <url> <source> <id>")
         return
 
     url = sys.argv[1]
     source = sys.argv[2]
-
+    id = sys.argv[3]
+    
     scrape_func = SCRAPE_FUNC_MAP.get(source)
 
     if not scrape_func:
@@ -31,6 +32,7 @@ async def main():
 
     try:
         article = await scrape_func(url)
+        article["id"] = id  # ✅ Thêm ID vào dict kết quả
         import json
         print(json.dumps(article, ensure_ascii=False))  # ✅ In ra JSON hợp lệ
 
