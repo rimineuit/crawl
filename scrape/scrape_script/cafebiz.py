@@ -58,7 +58,7 @@ async def scrape_cafebiz_article(url):
         viewport_height=720,
         extra_args=["--disable-extensions"],
     )
-
+    
     async with AsyncWebCrawler(config=browser_config) as crawler:
         wait_for_article = """js:() => {
             return document.querySelector('div.content#mainDetail') !== null;
@@ -98,11 +98,4 @@ async def scrape_cafebiz_article(url):
             print("❌ Không trích xuất được nội dung từ Cafebiz")
 
         return article
-import sys
-import asyncio
 
-if __name__ == "__main__":
-    import sys
-    url = sys.argv[1]
-    result = asyncio.run(scrape_cafebiz_article(url))
-    print(json.dumps(result, ensure_ascii=False))

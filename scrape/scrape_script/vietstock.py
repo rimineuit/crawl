@@ -67,7 +67,7 @@ async def scrape_vietstock_article(link):
                 if "time" in article:
                     converted_time = convert_vn_time_to_utc(article["time"])
                     if converted_time:
-                        article["time"] = converted_time
+                        article["time"] = converted_time.isoformat()
                     else:
                         article["time"] = None
 
@@ -79,7 +79,6 @@ async def scrape_vietstock_article(link):
 
                 article["href"] = link
 
-                print("✅ Scrape vietstock article success")
             except Exception as e:
                 print(f"❌ Error parsing article result: {e}")
                 article = None

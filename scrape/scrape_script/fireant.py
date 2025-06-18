@@ -97,12 +97,10 @@ async def scrape_fireant_article(link):
                 if "time" in article:
                     converted_time = convert_vn_time_to_utc(article["time"])
                     if converted_time:
-                        article["time"] = converted_time
+                        article["time"] = converted_time.isoformat()
                     else:
                         print(f"⚠️ Không thể chuyển đổi thời gian: {article['time']}")
                         article["time"] = None
-
-                print("✅ Scrape article success")
             except Exception as e:
                 print(f"❌ Error parsing article result: {e}")
                 article = None

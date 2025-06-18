@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from datetime import datetime
 import json
 # PyVi để tokenize và loại bỏ stop-words
-from scrape_articles_from_reranker import scrape_from_urls
+from scrape_articles_by_source import scrape_from_urls
 # Jina AI reranker client
 from jina import Client as JinaClient, Document
 

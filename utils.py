@@ -57,3 +57,4 @@ async def check_article_existed_in_db(url):
         result = await conn.fetchval(query, url)
         return result
     
+    

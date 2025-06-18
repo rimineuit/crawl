@@ -67,7 +67,7 @@ async def scrape_cafef_article(url):
                 # Xử lý thời gian
                 if "time" in article:
                     parsed_time = convert_vn_time_to_aware(article["time"])
-                    article["time"] = parsed_time if parsed_time else None
+                    article["time"] = parsed_time.isoformat() if parsed_time else None
 
                 # Bổ sung metadata
                 article["href"] = url
