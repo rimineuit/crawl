@@ -92,7 +92,7 @@ async def visit_link_fireant(link):
     """
     
     wait_for_articles = """js:() => {
-        return document.querySelector('div.mt-5 div.w-full div[data-index="0"]') !== null;
+        return document.querySelector('div.mt-5 div.w-full div[data-index="2"]') !== null;
     }"""
 
     schema = {
@@ -141,7 +141,6 @@ async def visit_link_fireant(link):
         data = []
         articles = json.loads(first_article.extracted_content)
         data.extend(articles)
-
         if not await check_article_existed_in_db(f"https://fireant.vn{data[-1].get('href','')}"):
             # Vòng lặp while để lấy tất cả những bài viết trong ngày
             while True:
