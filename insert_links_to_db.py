@@ -61,7 +61,7 @@ async def save_links_to_db(pool, links, source):
         return
 
     insert_query = """
-        INSERT INTO articles (url, title, description, source)
+        INSERT INTO links (url, title, description, source)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (url) DO NOTHING;
     """

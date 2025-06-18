@@ -66,7 +66,7 @@ async def visit_link_fireant(link):
         // Scroll until meet article index 0
         const tryScroll = () => {
             // If articles are found, resolve
-            if (document.querySelector('div.mt-5 div.w-full div[data-index="0"]')) {
+            if (document.querySelector('div.mt-5 div.w-full div[data-index="2"]')) {
                 resolve();
                 return;
             }
@@ -108,7 +108,7 @@ async def visit_link_fireant(link):
 
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=True,
+        headless=False,
         extra_args=["--disable-extensions"],
     )
 
