@@ -52,7 +52,7 @@ def check_date_time(date_time_str: str) -> datetime | None:
 async def visit_link_vietstock(link):
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=False,
+        headless=True,
         extra_args=["--disable-extensions"],
     )
     at_least_on_article = """js:() => {
