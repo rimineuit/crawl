@@ -36,8 +36,8 @@ RUN pip install -r requirements.txt
 RUN python -m playwright install --with-deps chromium
 RUN crawl4ai-setup
 RUN crawl4ai-doctor 
-# # Cổng mặc định Railway sẽ gán qua biến môi trường `PORT`
-# ENV PORT=8000
+# Cổng mặc định Railway sẽ gán qua biến môi trường `PORT`
+ENV PORT=8000
 
-# # Lệnh chạy FastAPI bằng uvicorn
-# CMD ["uvicorn", "test_fast_api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Lệnh chạy FastAPI bằng uvicorn
+CMD ["uvicorn", "test_fast_api:app", "--host", "0.0.0.0", "--port", "8000"]
