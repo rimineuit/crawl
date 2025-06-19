@@ -14,7 +14,6 @@ SCRAPE_FUNC_MAP = {
     "VietStock": scrape_vietstock_article,
 }
 
-
 async def main():
     if len(sys.argv) < 3:
         print("⚠️ Dùng: python script.py <url> <source>")
@@ -28,7 +27,6 @@ async def main():
     if not scrape_func:
         print(f"❌ Source không hợp lệ: '{source}'. Hỗ trợ: {list(SCRAPE_FUNC_MAP.keys())}")
         return
-
     try:
         article = await scrape_func(url)
         article["url"] = url  # ✅ Thêm ID vào dict kết quả

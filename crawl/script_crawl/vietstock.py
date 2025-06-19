@@ -17,68 +17,55 @@ from zoneinfo import ZoneInfo
 import re
 import logging
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+import logging
+
 def check_date_time(date_time_str: str) -> datetime | None:
     """
-    Parse chuỗi thời gian và trả về đối tượng datetime có timezone Asia/Ho_Chi_Minh nếu hợp lệ trong ngày hôm nay.
-    Hỗ trợ:
-    - 'x giờ trước'
-    - 'x phút trước'
-    - 'dd/mm HH:MM'
+    Parse chuỗi ngày tháng dạng 'dd/mm/yyyy' và trả về đối tượng datetime 
+    với timezone Asia/Ho_Chi_Minh nếu hợp lệ và trong ngày hôm nay.
     """
     vn_tz = ZoneInfo("Asia/Ho_Chi_Minh")
     now = datetime.now(vn_tz)
 
     try:
-        date_time_str = date_time_str.strip().lower()
+        date_time_str = date_time_str.strip()
 
-        # Trường hợp: "x giờ trước"
-        if "giờ" in date_time_str:
-            match = re.search(r"(\d+)\s*giờ", date_time_str)
-            if match:
-                hours_ago = int(match.group(1))
-                article_time = now - timedelta(hours=hours_ago)
-                if article_time.date() == now.date():
-                    return article_time
-
-        # Trường hợp: "x phút trước"
-        elif "phút" in date_time_str:
-            match = re.search(r"(\d+)\s*phút", date_time_str)
-            if match:
-                minutes_ago = int(match.group(1))
-                article_time = now - timedelta(minutes=minutes_ago)
-                if article_time.date() == now.date():
-                    return article_time
-
-        # Trường hợp: "dd/mm HH:MM"
-        else:
-            try:
-                article_time = datetime.strptime(date_time_str, "%d/%m %H:%M")
-                article_time = article_time.replace(year=now.year, tzinfo=vn_tz)
-                if article_time.date() == now.date():
-                    return article_time
-            except ValueError:
-                logging.warning(f"⚠️ Unrecognized time format: '{date_time_str}'")
+        # Trường hợp: "dd/mm/yyyy"
+        try:
+            article_time = datetime.strptime(date_time_str, "%d/%m/%Y")
+            article_time = article_time.replace(tzinfo=vn_tz)
+            if article_time.date() == now.date():
+                return article_time
+            else:
                 return None
+        except ValueError:
+            logging.warning(f"⚠️ Unrecognized date format: '{date_time_str}'")
+            return None
 
     except Exception as e:
-        logging.warning(f"⚠️ Error parsing time string '{date_time_str}': {e}")
+        logging.warning(f"⚠️ Error parsing date string '{date_time_str}': {e}")
         return None
-
-
+    
+    
 async def visit_link_vietstock(link):
     browser_config = BrowserConfig(
         browser_type="chromium",
-        headless=True,
+        headless=False,
         extra_args=["--disable-extensions"],
     )
     at_least_on_article = """js:() => {
-        return document.querySelector('div.container div.col-md-12 div.business div.single_post div.single_post_text') !== null;
+        return document.querySelector('div.container div.padding-bottom-30 div.row div.col-lg-8 section.scroll-content div.single_post') !== null;
     }"""
     next_page_script = """
-        btn = document.querySelector("li.pagination-page.next");
+        btn = document.querySelector("ul.pagination li.pagination-page.next a");
         if (btn) {
-            btn.click();
-            }
+            btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                btn.click();
+            }, 500); // Chờ 500ms
+        }
     """
     data = []
     async with AsyncWebCrawler(config=browser_config) as crawler:
@@ -90,14 +77,15 @@ async def visit_link_vietstock(link):
                 wait_for=at_least_on_article
             )
         )
+        # print("Đã xuất hiện")
         schema = {
             "name": "Article",
-            "baseSelector": "div.container div.col-md-12 div.business div.single_post div.single_post_text",
+            "baseSelector": "div.container div.padding-bottom-30 div.row div.col-lg-8 section.scroll-content div.single_post",
             "fields": [
-                {"name": "title", "selector": "h4 a", "type": "text"},
-                {"name": "href", "selector": "h4 a", "type": "attribute", "attribute": "href"},
-                {"name": "description", "selector": "p.post-p", "type": "text"},
-                {"name": "time", "selector": "div.row div.col-12 div.meta3 a[target='']", "type": "text"}
+                {"name": "title", "selector": "div.single_post_text.head-h h4 a", "type": "text"},
+                {"name": "href", "selector": "div.single_post_text.head-h h4 a", "type": "attribute", "attribute": "href"},
+                {"name": "description", "selector": "", "type": "text"},
+                {"name": "time", "selector": "div.img_wrap p", "type": "text"}
             ]
         }
         # Lấy các bài ở trang đầu
@@ -121,13 +109,13 @@ async def visit_link_vietstock(link):
                     cache_mode=CacheMode.BYPASS,
                     js_only=True,
                     extraction_strategy=JsonCssExtractionStrategy(schema),
-                    wait_for=at_least_on_article,
-                    js_code=next_page_script
+                    js_code=next_page_script,
+                    wait_for=at_least_on_article
                 )
             )
                 if await check_article_existed_in_db(f"https://vietstock.vn{data[-1].get('href','')}"):
                     break
-                data.extend(json.loads(result))
+                data.extend(json.loads(result.extracted_content))
     articles = []
     for item in data:
         try:
@@ -139,8 +127,9 @@ async def visit_link_vietstock(link):
             articles.append({
                 "title": item.get("title", "").strip(),
                 "href": f"https://vietstock.vn{item.get('href', '')}",
-                "description": item.get("description", "").strip(),
-                "published_at": parsed_time
+                # "description": item.get("description", "").strip(),
+                "published_at": parsed_time.isoformat(),
+                "source": "VietStock"
             })
             
         except Exception as e:

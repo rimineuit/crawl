@@ -7,6 +7,7 @@ import os
 
 app = FastAPI()
 env = os.environ.copy()
+
 env["PYTHONIOENCODING"] = "utf-8"
 env["PYTHONUTF8"] = "1"
 class URLInput(BaseModel):
@@ -19,26 +20,60 @@ def check_env():
     return {"python_executable": sys.executable}
     
     
-@app.get("/crawl")
+@app.get("/crawl/fireant")
 def crawl_links():
     try:
-        paths = ["crawl/run_crawl/fireant.py","crawl/run_crawl/vietstock.py"]
-        for path in paths:
-            script_path = os.path.abspath(path)
-            result = subprocess.run(
-                [sys.executable, script_path],
-                capture_output=True,
-                text=True,
-                check=True,
-                env=env,
-                encoding='utf-8'
-            )
-            print(">>> STDOUT:", result.stdout)
-            
-        return {"message": "done"}  # ✅ thêm dòng này
+        path = "crawl/run_crawl/fireant.py"
+        script_path = os.path.abspath(path)
+        result = subprocess.run(
+            [sys.executable, script_path],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+            encoding='utf-8'
+        )
+        matches = re.findall(r"\[\{.*\]", result.stdout, re.DOTALL)
+        json_str = matches[-1] if matches else None
+        if not json_str:
+            return {
+                "error": "Không tìm thấy JSON trong stdout",
+                "stdout": result.stdout
+            }
+
+        return json.loads(json_str)
     except subprocess.CalledProcessError as e:
         return {"error": "Script lỗi", "details": e.stderr}
-        
+    
+    
+@app.get("/crawl/vietstock")
+def crawl_links_vietstock():
+
+    try:
+        path = "crawl/run_crawl/vietstock.py"
+        script_path = os.path.abspath(path)
+        result = subprocess.run(
+            [sys.executable, script_path],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+            encoding='utf-8'
+        )
+        matches = re.findall(r"\[\{.*\]", result.stdout, re.DOTALL)
+        json_str = matches[-1] if matches else None
+        if not json_str:
+            return {
+                "error": "Không tìm thấy JSON trong stdout",
+                "stdout": result.stdout
+            }
+
+        return json.loads(json_str)
+    except subprocess.CalledProcessError as e:
+        return {"error": "Script lỗi", "details": e.stderr}
+
+    
+    
 import re
 
 

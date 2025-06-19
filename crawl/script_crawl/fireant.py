@@ -162,17 +162,16 @@ async def visit_link_fireant(link):
                 await asyncio.sleep(0.5)
                 articles = json.loads(contents.extracted_content)
                 data.extend(articles)
-                # Check if the last article is not in today
                 if parse_article_time(articles[-1].get("time_publish","")) == None:
-                    print(parse_article_time(articles[-1].get("time_publish","")))
-                    print("Last article is not in today!")
+                    # print(parse_article_time(articles[-1].get("time_publish","")))
+                    # print("Last article is not in today!")
                     break
                 
                 if await check_article_existed_in_db(f"https://fireant.vn{data[-1].get('href','')}"):
                     break
             
         end = time.time()
-        print(f"✅ Crawl done in {round(end - start, 2)}s")
+        # print(f"✅ Crawl done in {round(end - start, 2)}s")
 
         articles = []
 
@@ -194,8 +193,8 @@ async def visit_link_fireant(link):
                 articles.append({
                     "title": item.get("title", "").strip(),
                     "href": f"https://fireant.vn{item.get('href', '')}",
-                    "description": item.get("description", "").strip(),
-                    "published_at": parsed_time
+                    "published_at": parsed_time.isoformat(),
+                    "source": "Fireant"
                 })
             except Exception as e:
                 print(f"[⚠️] Error parsing item: {e}")

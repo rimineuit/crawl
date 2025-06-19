@@ -5,7 +5,6 @@ import time
 import json
 import re
 
-
 def convert_vn_time_to_utc(vn_time_str):
     """
     Chuyển chuỗi thời gian có định dạng 'dd-mm-YYYY HH:MM:SS+07:00' thành datetime với tzinfo=UTC+7.
@@ -17,7 +16,6 @@ def convert_vn_time_to_utc(vn_time_str):
     except (ValueError, TypeError) as e:
         print(f"❌ Error converting time '{vn_time_str}': {e}")
         return None
-
 
 async def scrape_vietstock_article(link):
     schema_article = {
