@@ -14,7 +14,6 @@ def get_domain_links(domain_name_path):
         logging.warning(f"No valid domains found in {domain_name_path}")
     return domains_links
 
-
 async def save_articles_to_db(pool, articles):
     if not articles:
         print("⚠️ Không có bài viết nào để lưu.")
@@ -53,7 +52,7 @@ async def check_article_existed_in_db(url):
 
     pool = await asyncpg.create_pool(DATABASE_URL)
     async with pool.acquire() as conn:
-        query = "SELECT EXISTS(SELECT 1 FROM links WHERE url = $1)"
+        query = "SELECT EXISTS(SELECT 1 FROM articles WHERE url = $1)"
         result = await conn.fetchval(query, url)
         return result
     
