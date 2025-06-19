@@ -126,7 +126,7 @@ async def visit_link_vietstock(link):
 
             articles.append({
                 "title": item.get("title", "").strip(),
-                "href": f"https://vietstock.vn{item.get('href', '')}",
+                "url": f"https://vietstock.vn{item.get('href', '')}",
                 # "description": item.get("description", "").strip(),
                 "published_at": parsed_time.isoformat(),
                 "source": "VietStock"

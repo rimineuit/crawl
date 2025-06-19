@@ -192,7 +192,7 @@ async def visit_link_fireant(link):
 
                 articles.append({
                     "title": item.get("title", "").strip(),
-                    "href": f"https://fireant.vn{item.get('href', '')}",
+                    "url": f"https://fireant.vn{item.get('href', '')}",
                     "published_at": parsed_time.isoformat(),
                     "source": "Fireant"
                 })
