@@ -92,7 +92,31 @@ def embedding_articles():
         return {"Success"}
     except:
         return {"error"}
-
+class Query(BaseModel):
+    query: str
+    
+    
+@app.post("/embedding_query")
+def embedding_query(input_data: Query):
+    try:
+        path = "embedding_query.py"
+        script_path = os.path.abspath(path)
+        result = subprocess.run(
+            [sys.executable, script_path, input_data.query],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+            encoding='utf-8'
+        )
+        if not result:
+            return {
+                "error": "Không tìm thấy embedding trong stdout",
+            }
+        return json.loads(result.stdout)
+    except:
+        return {"error": "Không thể embedding query"}
+    
 
 @app.post("/scrape")
 def scrape_articles(input_data: URLInput):
