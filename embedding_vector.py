@@ -9,20 +9,20 @@ dotenv.load_dotenv()
 db_url = os.getenv("DATABASE_URL")
 jina_api_key = os.getenv("JINA_API_KEY")
 
-BATCH_SIZE = 10
+BATCH_SIZE = 50
 
 async def fetch_links_without_embedding(pool, batch_size):
     """Lấy batch các link chưa có embedding."""
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
-            SELECT link_id, content
+            SELECT id, content
             FROM articles
             WHERE embedding IS NULL
             LIMIT $1
         """, batch_size)
         return [
             {
-                'id': row['link_id'],
+                'id': row['id'],
                 'text': (row['content'] or '')
             }
             for row in rows
@@ -62,7 +62,7 @@ def list_to_pgvector(v):
 async def save_embeddings_to_db(pool, embeddings):
     async with pool.acquire() as conn:
         await conn.executemany(
-            "UPDATE links SET embedding = $1 WHERE link_id = $2",
+            "UPDATE articles SET embedding = $1 WHERE id = $2",
             [(list_to_pgvector(embedding), link_id) for link_id, embedding in embeddings]
         )
 
@@ -82,6 +82,7 @@ async def process_all_links():
         try:
             embeddings = await embed_links_with_jina(links, jina_api_key)
             await save_embeddings_to_db(pool, embeddings)
+            await asyncio.sleep(1)
             total += len(embeddings)
         except Exception as e:
             print(f"❌ Lỗi: {e}")
