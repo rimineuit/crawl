@@ -9,21 +9,21 @@ dotenv.load_dotenv()
 db_url = os.getenv("DATABASE_URL")
 jina_api_key = os.getenv("JINA_API_KEY")
 
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 
 async def fetch_links_without_embedding(pool, batch_size):
     """Lấy batch các link chưa có embedding."""
     async with pool.acquire() as conn:
         rows = await conn.fetch("""
-            SELECT link_id, title, description
-            FROM links
+            SELECT link_id, content
+            FROM articles
             WHERE embedding IS NULL
             LIMIT $1
         """, batch_size)
         return [
             {
                 'id': row['link_id'],
-                'text': (row['title'] or '') + '\n' + (row['description'] or '')
+                'text': (row['content'] or '')
             }
             for row in rows
         ]
@@ -41,7 +41,7 @@ async def embed_links_with_jina(links, jina_api_key):
     data = {
         "model": "jina-embeddings-v3",
         "task": "retrieval.passage",
-        "dimensions": 64,
+        "dimensions": 768,
         "input": documents
     }
 

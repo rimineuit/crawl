@@ -76,6 +76,23 @@ def crawl_links_vietstock():
     
 import re
 
+@app.get("/embedding_articles")
+def embedding_articles():
+    try:
+        path = "embedding_vector.py"
+        script_path = os.path.abspath(path)
+        result = subprocess.run(
+            [sys.executable, script_path],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+            encoding='utf-8'
+        )
+        return {"Success"}
+    except:
+        return {"error"}
+
 
 @app.post("/scrape")
 def scrape_articles(input_data: URLInput):
