@@ -7,9 +7,10 @@ import asyncpg
 dotenv.load_dotenv()
 
 db_url = os.getenv("DATABASE_URL")
-jina_api_key = os.getenv("JINA_API_KEY")
+google_access_token = os.getenv("GOOGLE_API_KEY")
+project_id = os.getenv("GOOGLE_PROJECT_ID")  # Lấy Project ID từ .env
 
-BATCH_SIZE = 1
+BATCH_SIZE = 50
 
 async def fetch_links_without_embedding(pool, batch_size):
     """Lấy batch các link chưa có embedding."""
@@ -28,46 +29,42 @@ async def fetch_links_without_embedding(pool, batch_size):
             for row in rows
         ]
 
-async def embed_links_with_jina(links, jina_api_key):
-    """Gửi văn bản tới Jina API để lấy embedding."""
-    url = 'https://api.jina.ai/v1/embeddings'
-    print(jina_api_key)
+async def embed_links_with_google(links, access_token, project_id):
+    """Gửi văn bản tới Google Text Embedding 004 API để lấy embedding."""
+    url = f'https://us-central1-aiplatform.googleapis.com/v1/projects/{project_id}/locations/us-central1/publishers/google/models/text-embedding-004:predict'
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {jina_api_key}'
+        'Authorization': f'Bearer {access_token}'
     }
 
     documents = [link['text'] for link in links]
     data = {
-        "model": "jina-embeddings-v3",
-        "task": "retrieval.passage",
-        "dimensions": 768,
-        "input": documents
+        "instances": [{"content": doc} for doc in documents],
+        "parameters": {"task_type": "RETRIEVAL_DOCUMENT"}
     }
 
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
     json_data = response.json()
+    
     embeddings = []
-    for item in json_data["data"]:
-        index = item["index"]
-        embedding = item["embedding"]
-        link_id = links[index]["id"]
+    for idx, item in enumerate(json_data["predictions"]):
+        embedding = item["embeddings"]["values"]
+        link_id = links[idx]["id"]
         embeddings.append((link_id, embedding))
     return embeddings
 
 def list_to_pgvector(v):
-    print(f'[{",   ".join(f"{x:.8f}" for x in v)}]')
-    raise
-    return f'[{",   ".join(f"{x:.8f}" for x in v)}]'
+    """Chuyển danh sách số thành định dạng pgvector."""
+    return f'[{", ".join(f"{x:.8f}" for x in v)}]'
 
 async def save_embeddings_to_db(pool, embeddings):
+    """Lưu embedding vào database."""
     async with pool.acquire() as conn:
         await conn.executemany(
             "UPDATE articles SET embedding = $1 WHERE id = $2",
             [(list_to_pgvector(embedding), link_id) for link_id, embedding in embeddings]
         )
-
 
 async def process_all_links():
     """Chạy xử lý cho đến khi không còn link nào thiếu embedding."""
@@ -82,13 +79,13 @@ async def process_all_links():
 
         print(f"🧠 Đang xử lý {len(links)} link...")
         try:
-            embeddings = await embed_links_with_jina(links, jina_api_key)
+            embeddings = await embed_links_with_google(links, google_access_token, project_id)
             await save_embeddings_to_db(pool, embeddings)
-            await asyncio.sleep(1)
+            await asyncio.sleep(1)  # Tránh gọi API quá nhanh
             total += len(embeddings)
         except Exception as e:
             print(f"❌ Lỗi: {e}")
-            break  # bạn có thể retry ở đây nếu muốn
+            break  # Có thể thêm logic retry nếu cần
 
     await pool.close()
 
