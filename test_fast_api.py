@@ -156,11 +156,11 @@ async def youtube_upload(body: VideoBody):
     """
     Gọi script video2gemini_upload.py -> trả JSON upload của Gemini.
     """
-    cmd = [sys.executable, "video2gemini_uploads.py", body.url]
-
     try:
+        path = "video2gemini_uploads.py"
+        script_path = os.path.abspath(path)
         proc = subprocess.run(
-            cmd,
+            [sys.executable, script_path, body.url],
             timeout=900,
             capture_output=True,
             text=True,
