@@ -161,48 +161,42 @@ async def log_request(request: Request, call_next):
 
 @app.post("/youtube/upload")
 async def youtube_upload(body: VideoBody):
-    try:
-        script_path = os.path.abspath("video2gemini_uploads.py")
-        url = body.url.strip()
-        print(url)
-        url = re.sub(r"[;]+$", "", body.url.strip())
-        print("after:", url)
-        print("🔧 subprocess args:", [sys.executable, script_path, url])
-        print("🌐 sys.executable:", sys.executable)
-        print("📂 script_path:", script_path)
-        print("🌍 ENV LANG:", os.environ.get("LANG"))
-        print("🌍 ENV LC_ALL:", os.environ.get("LC_ALL"))
+    # Làm sạch URL khỏi dấu ; nếu có
+    clean_url = body.url.strip().rstrip(';')
 
+    print("📥 URL nhận được (raw):", body.url)
+    print("📥 URL sau khi làm sạch:", repr(clean_url))
+
+    # Đường dẫn tuyệt đối tới script (nếu cần)
+    script_path = "video2gemini_uploads.py"  # hoặc /app/video2gemini_uploads.py nếu dùng Railway
+
+    cmd = ["python3", script_path, clean_url]
+    print("🔧 subprocess args:", cmd)
+
+    try:
         proc = subprocess.run(
-            [sys.executable, script_path, url],
+            cmd,
             capture_output=True,
             text=True,
-            check=True,
-            encoding='utf-8',
-            env=env
-        )
-
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"""❌ Subprocess error:
-            STDOUT:
-            {e.stdout}
-            STDERR:
-            {e.stderr}
-            ARGS:
-            {e.cmd}
-            """
+            timeout=900
         )
     except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="⏰ Quá thời gian xử lý subprocess")
+        raise HTTPException(status_code=504, detail="⏱️ Quá thời gian xử lý")
 
-    # Tìm JSON trong stdout
+    if proc.returncode != 0:
+        raise HTTPException(
+            status_code=500,
+            detail=f"yt-dlp/Gemini error:\n{proc.stderr}"
+        )
+
+    # Tìm đoạn JSON trong stdout
+    import re
     try:
         json_text_match = re.search(r"{[\s\S]+}", proc.stdout)
         if not json_text_match:
-            raise ValueError("Không tìm thấy JSON trong stdout")
-        result_json = json.loads(json_text_match.group(0))
+            raise ValueError("Không tìm thấy đoạn JSON hợp lệ trong stdout")
+        json_text = json_text_match.group(0)
+        result_json = json.loads(json_text)
     except Exception as e:
         raise HTTPException(
             status_code=500,
