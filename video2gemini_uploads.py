@@ -17,7 +17,9 @@ if not API_KEY:
     sys.exit("❌ Chưa đặt biến môi trường GOOGLE_API_KEY")
 
 UPLOAD_URL = f"https://generativelanguage.googleapis.com/upload/v1beta/files?key={API_KEY}"
-TMP_DIR    = Path("./data")               # đổi nếu /tmp không được ghi
+TMP_DIR = Path("/tmp")   # Thư mục luôn ghi được trên Railway
+TMP_DIR.mkdir(exist_ok=True)
+     # đổi nếu /tmp không được ghi
 
 def download_video(url: str) -> Path:
     """Dùng yt-dlp tải video YouTube (đã merge audio) về TMP_DIR, trả Path."""
