@@ -177,20 +177,20 @@ async def youtube_upload(body: VideoBody):
             text=True,
             check=True,
             encoding='utf-8',
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"}
+            env=env
         )
 
     except subprocess.CalledProcessError as e:
         raise HTTPException(
             status_code=500,
             detail=f"""❌ Subprocess error:
-STDOUT:
-{e.stdout}
-STDERR:
-{e.stderr}
-ARGS:
-{e.cmd}
-"""
+            STDOUT:
+            {e.stdout}
+            STDERR:
+            {e.stderr}
+            ARGS:
+            {e.cmd}
+            """
         )
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="⏰ Quá thời gian xử lý subprocess")
