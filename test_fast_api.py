@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import subprocess
 import json
@@ -45,7 +45,6 @@ def crawl_links():
     except subprocess.CalledProcessError as e:
         return {"error": "Script lỗi", "details": e.stderr}
     
-    
 @app.get("/crawl/vietstock")
 def crawl_links_vietstock():
 
@@ -72,8 +71,6 @@ def crawl_links_vietstock():
     except subprocess.CalledProcessError as e:
         return {"error": "Script lỗi", "details": e.stderr}
 
-    
-    
 import re
 
 @app.get("/embedding_articles")
@@ -151,3 +148,45 @@ def scrape_articles(input_data: URLInput):
             "stdout": result.stdout,
             "details": str(e)
         }
+class VideoBody(BaseModel):
+    url: str                  # YouTube (hoặc link yt-dlp hỗ trợ)
+
+@app.post("/youtube/upload")
+async def youtube_upload(body: VideoBody):
+    """
+    Gọi script video2gemini_upload.py -> trả JSON upload của Gemini.
+    """
+    cmd = [sys.executable, "video2gemini_uploads.py", body.url]
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            timeout=900,
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+            encoding='utf-8'# 15′; đủ cho video vài trăm MB
+        )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Quá thời gian xử lý")
+
+    if proc.returncode != 0:
+        raise HTTPException(
+            status_code=500,
+            detail=f"yt-dlp/Gemini error:\n{proc.stderr}"
+        )
+
+    # Tìm đoạn JSON trong stdout bằng regex
+    try:
+        json_text_match = re.search(r"{[\s\S]+}", proc.stdout)
+        if not json_text_match:
+            raise ValueError("Không tìm thấy đoạn JSON hợp lệ trong stdout")
+        json_text = json_text_match.group(0)
+        result_json = json.loads(json_text)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Không parse được JSON từ script: {e}\nSTDOUT:\n{proc.stdout}"
+        )
+    return result_json
