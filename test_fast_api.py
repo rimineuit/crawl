@@ -178,7 +178,8 @@ async def youtube_upload(body: VideoBody):
             cmd,
             capture_output=True,
             text=True,
-            timeout=900
+            timeout=900,
+            env=env
         )
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="⏱️ Quá thời gian xử lý")
