@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 import subprocess
 import json
@@ -149,44 +149,62 @@ def scrape_articles(input_data: URLInput):
             "details": str(e)
         }
 class VideoBody(BaseModel):
-    url: str                  # YouTube (hoặc link yt-dlp hỗ trợ)
+    url: str
+    
+    
+@app.middleware("http")
+async def log_request(request: Request, call_next):
+    body = await request.body()
+    print("📥 RAW request body:", body.decode("utf-8", errors="replace"))
+    response = await call_next(request)
+    return response
 
 @app.post("/youtube/upload")
 async def youtube_upload(body: VideoBody):
-    """
-    Gọi script video2gemini_upload.py -> trả JSON upload của Gemini.
-    """
     try:
-        path = "video2gemini_uploads.py"
-        script_path = os.path.abspath(path)
+        script_path = os.path.abspath("video2gemini_uploads.py")
+        url = body.url.strip()
+
+        print("🔧 subprocess args:", [sys.executable, script_path, url])
+        print("🌐 sys.executable:", sys.executable)
+        print("📂 script_path:", script_path)
+        print("🌍 ENV LANG:", os.environ.get("LANG"))
+        print("🌍 ENV LC_ALL:", os.environ.get("LC_ALL"))
+
         proc = subprocess.run(
-            [sys.executable, script_path, body.url.strip().rstrip(";")],
-            timeout=900,
+            [sys.executable, script_path, url],
             capture_output=True,
             text=True,
             check=True,
-            env=env,
-            encoding='utf-8'# 15′; đủ cho video vài trăm MB
+            encoding='utf-8',
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"}
         )
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="Quá thời gian xử lý")
 
-    if proc.returncode != 0:
+    except subprocess.CalledProcessError as e:
         raise HTTPException(
             status_code=500,
-            detail=f"yt-dlp/Gemini error:\n{proc.stderr}"
+            detail=f"""❌ Subprocess error:
+STDOUT:
+{e.stdout}
+STDERR:
+{e.stderr}
+ARGS:
+{e.cmd}
+"""
         )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="⏰ Quá thời gian xử lý subprocess")
 
-    # Tìm đoạn JSON trong stdout bằng regex
+    # Tìm JSON trong stdout
     try:
         json_text_match = re.search(r"{[\s\S]+}", proc.stdout)
         if not json_text_match:
-            raise ValueError("Không tìm thấy đoạn JSON hợp lệ trong stdout")
-        json_text = json_text_match.group(0)
-        result_json = json.loads(json_text)
+            raise ValueError("Không tìm thấy JSON trong stdout")
+        result_json = json.loads(json_text_match.group(0))
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Không parse được JSON từ script: {e}\nSTDOUT:\n{proc.stdout}"
         )
+
     return result_json
