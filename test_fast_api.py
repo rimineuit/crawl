@@ -164,7 +164,9 @@ async def youtube_upload(body: VideoBody):
     try:
         script_path = os.path.abspath("video2gemini_uploads.py")
         url = body.url.strip()
-
+        print(url)
+        url = re.sub(r"[;]+$", "", body.url.strip())
+        print("after:", url)
         print("🔧 subprocess args:", [sys.executable, script_path, url])
         print("🌐 sys.executable:", sys.executable)
         print("📂 script_path:", script_path)
