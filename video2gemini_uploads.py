@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 import json
 
-API_KEY   = os.getenv("GOOGLE_API_KEY")
+API_KEY = "AIzaSyBUwBMbdeD_l6rQ_TJiLuA3eilOrdbm6AQ"
 if not API_KEY:
     sys.exit("❌ Chưa đặt biến môi trường GOOGLE_API_KEY")
 
