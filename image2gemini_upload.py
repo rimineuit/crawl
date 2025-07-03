@@ -10,7 +10,7 @@ import uuid
 import requests
 from pathlib import Path
 from mimetypes import guess_type
-
+import json
 API_KEY = "AIzaSyBUwBMbdeD_l6rQ_TJiLuA3eilOrdbm6AQ"
 if not API_KEY:
     sys.exit("❌ Chưa đặt biến môi trường GOOGLE_API_KEY")
@@ -28,7 +28,7 @@ def download_image(url: str) -> Path:
 
     r = requests.get(url, timeout=30)
     if not r.ok:
-        sys.exit("❌ Lỗi tải ảnh")
+        sys.exit("Lỗi tải ảnh")
 
     with out_path.open("wb") as f:
         f.write(r.content)
@@ -56,7 +56,6 @@ def main():
 
     try:
         resp = upload_gemini(img_file)
-        print("✅ Upload thành công:")
         print(json.dumps(resp, indent=2, ensure_ascii=False))
     finally:
         if img_file.exists():

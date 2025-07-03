@@ -168,7 +168,7 @@ async def youtube_upload(body: VideoBody):
     # Đường dẫn tuyệt đối tới script (nếu cần)
     script_path = "video2gemini_uploads.py"  # hoặc /app/video2gemini_uploads.py nếu dùng Railway
 
-    cmd = ["python3", script_path, clean_url]
+    cmd = ["python", script_path, clean_url]
     print("🔧 subprocess args:", cmd)
 
     try:
@@ -214,7 +214,7 @@ async def image_upload(body: ImageBody):
 
     # Tùy theo vị trí file script
     script_path = "image2gemini_upload.py"  # hoặc "/app/image2gemini_upload.py"
-    cmd = ["python3", script_path, clean_url]
+    cmd = [sys.executable, script_path, clean_url]
     print("🖼️ subprocess args:", cmd)
 
     try:

@@ -14,7 +14,7 @@ import json
 
 API_KEY = "AIzaSyBUwBMbdeD_l6rQ_TJiLuA3eilOrdbm6AQ"
 if not API_KEY:
-    sys.exit("❌ Chưa đặt biến môi trường GOOGLE_API_KEY")
+    sys.exit("Chưa đặt biến môi trường GOOGLE_API_KEY")
 
 UPLOAD_URL = f"https://generativelanguage.googleapis.com/upload/v1beta/files?key={API_KEY}"
 
@@ -34,9 +34,9 @@ def download_video(url: str) -> Path:
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode:
         print(res.stderr)
-        sys.exit("❌ yt-dlp thất bại")
+        sys.exit("yt-dlp thất bại")
     if not out_path.exists():
-        sys.exit("❌ Không tìm thấy file sau khi tải")
+        sys.exit("Không tìm thấy file sau khi tải")
     return out_path
 
 def upload_gemini(file_path: Path) -> dict:
