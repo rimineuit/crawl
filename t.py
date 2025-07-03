@@ -1,25 +1,24 @@
-# from youtube_transcript_api import YouTubeTranscriptApi
+import os
+import shutil
 
-# ytt_api = YouTubeTranscriptApi()
-# fetched_transcript =  ytt_api.fetch("th6ivLDEz2Q",languages=['vi', 'en'])
-# transcript_list = ytt_api.list('th6ivLDEz2Q')
-# print(transcript_list)
-# # is iterable
-# for snippet in fetched_transcript:
-#     print(snippet.text)
+# Thư mục nguồn (gồm ảnh cần đổi tên)
+source_folder = 'merged'
+# Thư mục đích (lưu ảnh đã đổi tên)
+output_folder = 'rimine_fire'
+os.makedirs(output_folder, exist_ok=True)
 
-# # indexable
-# last_snippet = fetched_transcript[-1]
+# Lấy danh sách các ảnh
+files = [f for f in os.listdir(source_folder) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+files.sort()  # Sắp xếp để đặt tên theo thứ tự nhất quán
 
-# # provides a length
-# snippet_count = len(fetched_transcript)
+# Sao chép và đổi tên
+for idx, filename in enumerate(files, start=1):
+    ext = os.path.splitext(filename)[1]  # Giữ phần mở rộng
+    new_filename = f"{idx}{ext}"        # Đặt tên mới: 1.jpg, 2.jpg, ...
+    
+    src_path = os.path.join(source_folder, filename)
+    dst_path = os.path.join(output_folder, new_filename)
+    
+    shutil.copy(src_path, dst_path)
 
-
-import requests
-
-api_key = 'AIzaSyBUwBMbdeD_l6rQ_TJiLuA3eilOrdbm6AQ'
-upload_url = f"https://generativelanguage.googleapis.com/upload/v1beta/files?key={api_key}"
-
-with open("video.mp4", "rb") as f:
-    response = requests.post(upload_url, files={"file": ("video.mp4", f, "video/mp4")})
-    print(response.json())
+print(f"Đã sao chép và đổi tên {len(files)} ảnh sang thư mục '{output_folder}'")

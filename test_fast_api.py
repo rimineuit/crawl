@@ -148,6 +148,7 @@ def scrape_articles(input_data: URLInput):
             "stdout": result.stdout,
             "details": str(e)
         }
+        
 class VideoBody(BaseModel):
     url: str
     
@@ -163,9 +164,6 @@ async def log_request(request: Request, call_next):
 async def youtube_upload(body: VideoBody):
     # Làm sạch URL khỏi dấu ; nếu có
     clean_url = body.url.strip().rstrip(';')
-
-    print("📥 URL nhận được (raw):", body.url)
-    print("📥 URL sau khi làm sạch:", repr(clean_url))
 
     # Đường dẫn tuyệt đối tới script (nếu cần)
     script_path = "video2gemini_uploads.py"  # hoặc /app/video2gemini_uploads.py nếu dùng Railway
@@ -202,6 +200,50 @@ async def youtube_upload(body: VideoBody):
         raise HTTPException(
             status_code=500,
             detail=f"Không parse được JSON từ script: {e}\nSTDOUT:\n{proc.stdout}"
+        )
+
+    return result_json
+
+
+class ImageBody(BaseModel):
+    url: str
+
+@app.post("/image/upload")
+async def image_upload(body: ImageBody):
+    clean_url = body.url.strip().rstrip(';')
+
+    # Tùy theo vị trí file script
+    script_path = "image2gemini_upload.py"  # hoặc "/app/image2gemini_upload.py"
+    cmd = ["python3", script_path, clean_url]
+    print("🖼️ subprocess args:", cmd)
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env=os.environ  # hoặc bạn có thể tùy chỉnh biến môi trường ở đây
+        )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="⏱️ Xử lý quá thời gian")
+
+    if proc.returncode != 0:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi chạy script:\n{proc.stderr}"
+        )
+
+    try:
+        json_text_match = re.search(r"{[\s\S]+}", proc.stdout)
+        if not json_text_match:
+            raise ValueError("Không tìm thấy JSON hợp lệ trong stdout")
+        json_text = json_text_match.group(0)
+        result_json = json.loads(json_text)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi parse JSON từ output: {e}\nSTDOUT:\n{proc.stdout}"
         )
 
     return result_json
